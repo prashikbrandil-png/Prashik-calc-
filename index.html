@@ -1,0 +1,280 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prashik Calculator</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #10131b;
+  font-family: Arial, sans-serif;
+  color: white;
+}
+
+.calculator {
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+}
+
+.brand {
+  color: #ff9f43;
+  font-size: 14px;
+  letter-spacing: 3px;
+  margin-bottom: 28px;
+}
+
+.display {
+  min-height: 115px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+#history {
+  color: #8c93a5;
+  min-height: 24px;
+  font-size: 16px;
+}
+
+#screen {
+  font-size: clamp(36px, 12vw, 54px);
+  font-weight: 300;
+  overflow-wrap: anywhere;
+  text-align: right;
+  width: 100%;
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+button {
+  border: none;
+  border-radius: 50%;
+  aspect-ratio: 1;
+  font-size: 23px;
+  background: #252a38;
+  color: white;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  filter: brightness(1.4);
+  transform: scale(0.96);
+}
+
+.utility {
+  background: #414858;
+}
+
+.operator {
+  background: #ff9f43;
+  color: #171717;
+  font-weight: bold;
+}
+
+.equals {
+  background: #f47721;
+  color: white;
+}
+
+.zero {
+  grid-column: span 2;
+  border-radius: 40px;
+  aspect-ratio: auto;
+  text-align: left;
+  padding-left: 30px;
+}
+
+.footer {
+  text-align: center;
+  color: #737b8d;
+  font-size: 12px;
+  margin-top: 24px;
+}
+</style>
+</head>
+
+<body>
+<main class="calculator">
+  <div class="brand">Prashik / CALCULATOR</div>
+
+  <section class="display">
+    <div id="history">Ready to calculate</div>
+    <div id="screen" aria-live="polite">0</div>
+  </section>
+
+  <section class="buttons">
+    <button class="utility" onclick="clearAll()">AC</button>
+    <button class="utility" onclick="backspace()">DEL</button>
+    <button class="utility" onclick="percent()">%</button>
+    <button class="operator" onclick="choose('/')">÷</button>
+
+    <button onclick="digit('7')">7</button>
+    <button onclick="digit('8')">8</button>
+    <button onclick="digit('9')">9</button>
+    <button class="operator" onclick="choose('*')">×</button>
+
+    <button onclick="digit('4')">4</button>
+    <button onclick="digit('5')">5</button>
+    <button onclick="digit('6')">6</button>
+    <button class="operator" onclick="choose('-')">−</button>
+
+    <button onclick="digit('1')">1</button>
+    <button onclick="digit('2')">2</button>
+    <button onclick="digit('3')">3</button>
+    <button class="operator" onclick="choose('+')">+</button>
+
+    <button class="zero" onclick="digit('0')">0</button>
+    <button onclick="decimal()">.</button>
+    <button class="equals" onclick="calculate()">=</button>
+  </section>
+
+  <div class="footer">Simple tools. Smarter calculations.</div>
+</main>
+
+<script>
+let current = '0';
+let previous = null;
+let operation = null;
+let resetNext = false;
+let justCalculated = false;
+
+const screen = document.getElementById('screen');
+const history = document.getElementById('history');
+
+function show() {
+  screen.textContent = current;
+}
+
+function digit(n) {
+  if (current === 'Error') clearAll();
+
+  if (resetNext || justCalculated) {
+    current = n;
+    resetNext = false;
+    justCalculated = false;
+  } else if (current === '0') {
+    current = n;
+  } else if (current.length < 15) {
+    current += n;
+  }
+
+  show();
+}
+
+function decimal() {
+  if (resetNext || justCalculated) {
+    current = '0.';
+    resetNext = false;
+    justCalculated = false;
+  } else if (!current.includes('.')) {
+    current += '.';
+  }
+  show();
+}
+
+function choose(op) {
+  if (current === 'Error') return;
+
+  if (operation && !resetNext) calculate();
+
+  previous = Number(current);
+  operation = op;
+  resetNext = true;
+  justCalculated = false;
+
+  history.textContent =
+    current + ' ' +
+    ({'+':'+','-':'−','*':'×','/':'÷'}[op]);
+}
+
+function calculate() {
+  if (operation === null || previous === null ||
+      current === 'Error') return;
+
+  const a = previous;
+  const b = Number(current);
+  let result;
+
+  if (operation === '+') result = a + b;
+  if (operation === '-') result = a - b;
+  if (operation === '*') result = a * b;
+
+  if (operation === '/') {
+    if (b === 0) {
+      current = 'Error';
+      history.textContent = 'Cannot divide by zero';
+      operation = null;
+      previous = null;
+      resetNext = true;
+      show();
+      return;
+    }
+    result = a / b;
+  }
+
+  history.textContent =
+    a + ' ' +
+    ({'+':'+','-':'−','*':'×','/':'÷'}[operation]) +
+    ' ' + b + ' =';
+
+  current = String(Number(result.toPrecision(10)));
+  operation = null;
+  previous = null;
+  resetNext = true;
+  justCalculated = true;
+  show();
+}
+
+function clearAll() {
+  current = '0';
+  previous = null;
+  operation = null;
+  resetNext = false;
+  justCalculated = false;
+  history.textContent = 'Ready to calculate';
+  show();
+}
+
+function backspace() {
+  if (resetNext || justCalculated || current === 'Error') {
+    current = '0';
+    resetNext = false;
+    justCalculated = false;
+  } else {
+    current = current.length > 1
+      ? current.slice(0, -1) : '0';
+  }
+  show();
+}
+
+function percent() {
+  if (current !== 'Error') {
+    current = String(Number(current) / 100);
+    resetNext = false;
+    justCalculated = false;
+    show();
+  }
+}
+</script>
+</body>
+</html>
